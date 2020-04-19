@@ -15,7 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="200dp"
             app:elevation="0dp">
-<!--            可滚动的头部-->
+            <!--            可滚动的头部-->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
@@ -41,7 +41,10 @@
                         android:id="@+id/text_main_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="最炫名族风"
+                        android:singleLine="true"
+                        android:ellipsize="marquee"
+                        android:marqueeRepeatLimit="marquee_forever"
+                        android:text="抖音排行榜"
                         android:textColor="@color/white"
                         android:textSize="24sp" />
 
@@ -49,12 +52,12 @@
                         android:id="@+id/text_main_singer"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="张杰，张三"
+                        android:text="更新时间:4月19日"
                         android:textColor="@color/white" />
 
                 </LinearLayout>
             </LinearLayout>
-<!--            进度条区域-->
+            <!--            进度条区域-->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
@@ -71,22 +74,23 @@
 
                 <SeekBar
                     android:id="@+id/seek_bar"
-                    android:progressBackgroundTint="@color/white"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
+                    android:layout_height="wrap_content"
+                    android:progressBackgroundTint="@color/white" />
             </LinearLayout>
 
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:gravity="center"
-                android:background="@drawable/redius_view">
+                android:background="@drawable/redius_view"
+                android:gravity="center">
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
 
-                    android:text="歌词加载中..."/>
+                    android:text="歌词加载中..." />
             </LinearLayout>
         </com.google.android.material.appbar.AppBarLayout>
 

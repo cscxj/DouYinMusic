@@ -90,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
         playControlBtn.setOnClickListener(new ClickFloatBtn());
         switchModeBtn.setOnClickListener(new ClickSwitchModeListener());
         seekBar.setOnSeekBarChangeListener(new SeekBarDragListener());
+        textName.setSelected(true);
     }
 
 
@@ -214,14 +215,17 @@ public class MainActivity extends AppCompatActivity {
                 case LOOP_ONE:
                     playMode = PlayMode.LOOP_LIST;
                     switchModeBtn.setBackgroundResource(R.drawable.ic_repeat_black_24dp);
+                    Toast.makeText(MainActivity.this, "列表循环播放", Toast.LENGTH_SHORT).show();
                     break;
                 case LOOP_LIST:
                     playMode = PlayMode.RANDOM;
                     switchModeBtn.setBackgroundResource(R.drawable.ic_shuffle_white_24dp);
+                    Toast.makeText(MainActivity.this, "列表随机播放", Toast.LENGTH_SHORT).show();
                     break;
                 case RANDOM:
                     playMode = PlayMode.LOOP_ONE;
                     switchModeBtn.setBackgroundResource(R.drawable.ic_repeat_one_black_24dp);
+                    Toast.makeText(MainActivity.this, "单曲循环播放", Toast.LENGTH_SHORT).show();
                     break;
             }
         }
@@ -251,6 +255,7 @@ public class MainActivity extends AppCompatActivity {
     private class MusicPlayComplete implements MediaPlayer.OnCompletionListener {
         @Override
         public void onCompletion(MediaPlayer mp) {
+            Log.e("提示", "播放完了");
             int next = 0;
             switch (MainActivity.this.playMode) {
                 case LOOP_LIST:

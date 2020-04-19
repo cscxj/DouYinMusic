@@ -46,6 +46,7 @@ public class AudioWaveView extends View {
     /**
      * 指示器颜色
      */
+    private boolean shouldDraw = true;
     private int indicatorColor;
     private Random random;
     private Handler handler = new Handler() {
@@ -68,6 +69,13 @@ public class AudioWaveView extends View {
         init();
     }
 
+    public void pause(){
+        this.shouldDraw = false;
+    }
+    public void play(){
+        this.shouldDraw = true;
+    }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -81,7 +89,6 @@ public class AudioWaveView extends View {
         paint.setColor(indicatorColor);
         paint.setStyle(Paint.Style.FILL);
         random = new Random();
-
         initRect();
     }
 
@@ -96,10 +103,9 @@ public class AudioWaveView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
+        if (!shouldDraw) return;
         int left = rectWidth + space;
 
-        //画每个条之前高度都重新随机生成
         randomHeight = random.nextInt(viewHeight);
         rectF1.set(left * 0, randomHeight, left * 0 + rectWidth, viewHeight);
         randomHeight = random.nextInt(viewHeight);

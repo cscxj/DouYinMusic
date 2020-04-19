@@ -26,14 +26,14 @@ public class MusicPlayerService extends Service {
 
 
     @SuppressLint("NewApi")
-    public void play(String path) {
+    private void play(String path) {
         try {
             if (mediaPlayer != null) {
                 mediaPlayer.stop();
                 mediaPlayer.release();
             }
-            Log.i(TAG, "开始播放音乐");
             mediaPlayer = new MediaPlayer();
+            Log.i(TAG, "开始播放音乐");
             mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mediaPlayer.setDataSource(path);
             mediaPlayer.prepare();
@@ -41,20 +41,20 @@ public class MusicPlayerService extends Service {
                 @Override
                 public void onPrepared(MediaPlayer mp) {
                     mediaPlayer.start();
+                    mediaPlayer.setOnCompletionListener(completionListener);
                 }
             });
-            mediaPlayer.setOnCompletionListener(completionListener);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    void changeProgress(int progress){
+    private void changeProgress(int progress) {
         if (mediaPlayer == null) return;
         mediaPlayer.seekTo(progress);
     }
 
-    public void pause() {
+    private void pause() {
         if (mediaPlayer == null) return;
         if (mediaPlayer.isPlaying()) {
             Log.i(TAG, "播放暂停");
@@ -64,7 +64,7 @@ public class MusicPlayerService extends Service {
         }
     }
 
-    public void stop() {
+    private void stop() {
         if (mediaPlayer != null) {
             Log.i(TAG, "停止播放");
             mediaPlayer.stop();
@@ -75,13 +75,15 @@ public class MusicPlayerService extends Service {
         }
     }
 
+    private int getDuration() {
+        if (mediaPlayer != null) {
+            return mediaPlayer.getDuration();
+        } else {
+            return 0;
+        }
+    }
 
-    /**
-     * 获取播放进度
-     *
-     * @return
-     */
-    public int getCurrentProgress() {
+    private int getCurrentProgress() {
         try {
             if (mediaPlayer != null) {
                 if (mediaPlayer.isPlaying()) {
@@ -95,7 +97,7 @@ public class MusicPlayerService extends Service {
         return 0;
     }
 
-    public void setCompletionListener(MediaPlayer.OnCompletionListener onCompletionListener) {
+    private void setCompletionListener(MediaPlayer.OnCompletionListener onCompletionListener) {
         this.completionListener = onCompletionListener;
     }
 
@@ -120,12 +122,15 @@ public class MusicPlayerService extends Service {
         public void plays(String path) {
             play(path);
         }
+
         public void pauses() {
             pause();
         }
+
         public void stops() {
             stop();
         }
+
         public int getCurrentPosition() {
             return getCurrentProgress();
         }
@@ -133,8 +138,13 @@ public class MusicPlayerService extends Service {
         public void setCompletionListener(MediaPlayer.OnCompletionListener onCompletionListener) {
             MusicPlayerService.this.setCompletionListener(onCompletionListener);
         }
-        public void changeProgress(int progress){
+
+        public void changeProgress(int progress) {
             MusicPlayerService.this.changeProgress(progress);
+        }
+
+        public int getMusicLength() {
+            return MusicPlayerService.this.getDuration();
         }
     }
 

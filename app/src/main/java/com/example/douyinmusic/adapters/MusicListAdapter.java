@@ -27,6 +27,7 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.Musi
     };
     // 当前播放的音乐
     private int actionItem = -1;
+    private MusicItemViewHolder itemViewHolder;
 
     public MusicListAdapter(Playlist musicData) {
         this.data = musicData;
@@ -124,6 +125,13 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.Musi
     public void switchTo(int index){
         actionItem = index;
         notifyDataSetChanged();
+    }
+    // 控制active图标的播放和暂停
+    public void play(){
+
+    }
+    public void pause(){
+
     }
 
     public interface OnSelect {
