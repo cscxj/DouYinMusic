@@ -45,7 +45,7 @@ public class Tracks {
     private int copyright;
     @JsonProperty("s_id")
     private int sId;
-    private int mark;
+    private long mark;
     private String rurl;
     private int mst;
     private int cp;
@@ -242,10 +242,10 @@ public class Tracks {
          return sId;
      }
 
-    public void setMark(int mark) {
+    public void setMark(long mark) {
          this.mark = mark;
      }
-     public int getMark() {
+     public long getMark() {
          return mark;
      }
 

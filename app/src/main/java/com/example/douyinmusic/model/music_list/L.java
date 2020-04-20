@@ -14,7 +14,7 @@ public class L {
     private int br;
     private int fid;
     private int size;
-    private int vd;
+    private String vd;
     public void setBr(int br) {
          this.br = br;
      }
@@ -36,10 +36,10 @@ public class L {
          return size;
      }
 
-    public void setVd(int vd) {
+    public void setVd(String vd) {
          this.vd = vd;
      }
-     public int getVd() {
+     public String getVd() {
          return vd;
      }
 

@@ -1,12 +1,8 @@
 package com.example.douyinmusic.client;
 
-import android.util.Log;
-
 import com.example.douyinmusic.api.Api;
-import com.example.douyinmusic.model.Music;
 import com.example.douyinmusic.model.music_list.MusicJSON;
-import com.example.douyinmusic.model.music_list.Tracks;
-import com.example.douyinmusic.model.music_url.MusicUrl;
+import com.example.douyinmusic.model.rank_list.JSONRank;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -26,20 +22,22 @@ public class Client {
     }
 
     public static void start() {
-        client = new OkHttpClient();
+        if (client == null){
+            client = new OkHttpClient();
+        }
     }
 
 
     /*
      *  获取音乐列表的数据，直接返回JSON映射对象。
      * */
-    public static void getMusicList(final TaskCompleteCallback<MusicJSON> callback) {
+    public static void getMusicList(final long rankId,final TaskCompleteCallback<MusicJSON> callback) {
         new Thread() {
             @Override
             public void run() {
                 super.run();
                 Request request = new Request.Builder()
-                        .url(Api.TOP_LIST)
+                        .url(Api.TOP_LIST + rankId)
                         .build();
                 try {
                     Response response = client.newCall(request).execute();
@@ -63,13 +61,13 @@ public class Client {
         }.start();
     }
 
-    public static void getMusic(final TaskCompleteCallback<MusicUrl> callback) {
+    public static void getRankList(final TaskCompleteCallback<JSONRank> callback) {
         new Thread() {
             @Override
             public void run() {
                 super.run();
                 Request request = new Request.Builder()
-                        .url(Api.MUSIC_URL)
+                        .url(Api.RANK)
                         .build();
                 try {
                     Response response = client.newCall(request).execute();
@@ -83,10 +81,10 @@ public class Client {
                             .setPrettyPrinting()// 调教格式
                             .disableHtmlEscaping() //默认是GSON把HTML 转义的
                             .create();
-                    MusicUrl musicUrl = gson.fromJson(jsonData, MusicUrl.class);
-                    callback.completed(musicUrl);
+                    JSONRank rankData = gson.fromJson(jsonData, JSONRank.class);
+                    callback.completed(rankData);
                 } catch (IOException e) {
-                    callback.completed(new MusicUrl());
+                    callback.completed(new JSONRank());
                     e.printStackTrace();
                 }
             }

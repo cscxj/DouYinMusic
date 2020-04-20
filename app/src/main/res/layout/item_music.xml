@@ -42,7 +42,7 @@
 
     </LinearLayout>
 
-    <com.example.douyinmusic.ui.AudioWaveView
+    <com.example.douyinmusic.components.AudioWaveView
         android:id="@+id/tag_active"
         android:layout_width="18dp"
         android:layout_height="14dp"

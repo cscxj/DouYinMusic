@@ -6,13 +6,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.douyinmusic.R;
 import com.example.douyinmusic.model.music_list.Playlist;
-import com.example.douyinmusic.ui.AudioWaveView;
+import com.example.douyinmusic.components.AudioWaveView;
 
 public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.MusicItemViewHolder> {
     private Playlist data;
@@ -74,7 +75,7 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.Musi
     }
 
     @Override
-    public void onBindViewHolder(@NonNull MusicItemViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull final MusicItemViewHolder holder, int position) {
         // 绑定数据
         holder.itemView.setTag(position); // 标记每一个item
         holder.nameView.setText(data.getTracks().get(position).getName());
@@ -82,9 +83,12 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.Musi
         holder.durationText.setText(formatTime(data.getTracks().get(position).getDt()));
         holder.singerText.setText(data.getTracks().get(position).getAr().get(0).getName());
         // 添加点击事件
-        holder.itemView.setOnClickListener(new ClickItemListener());
-
-
+        if (data.getTracks().get(position).getFee() != 4) { // fee为4是付费歌曲
+            holder.itemView.setOnClickListener(new ClickItemListener());
+        } else {
+            holder.itemView.setOnClickListener(new ClickItemListener());
+            holder.itemView.setBackgroundColor(0x11000000);
+        }
         // 设置排名颜色
         if (position == 0) {
             holder.rankText.setTextColor(0xffef4238);
@@ -122,15 +126,17 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.Musi
         this.selectCallBack = onSelect;
     }
 
-    public void switchTo(int index){
+    public void switchTo(int index) {
         actionItem = index;
         notifyDataSetChanged();
     }
+
     // 控制active图标的播放和暂停
-    public void play(){
+    public void play() {
 
     }
-    public void pause(){
+
+    public void pause() {
 
     }
 

@@ -1,9 +1,13 @@
 package com.example.douyinmusic;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,13 +24,18 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.douyinmusic.adapters.MusicListAdapter;
 import com.example.douyinmusic.api.Api;
 import com.example.douyinmusic.client.Client;
@@ -34,8 +43,10 @@ import com.example.douyinmusic.client.TaskCompleteCallback;
 import com.example.douyinmusic.model.music_list.MusicJSON;
 import com.example.douyinmusic.model.music_list.Playlist;
 import com.example.douyinmusic.model.music_list.Tracks;
-import com.example.douyinmusic.model.music_url.MusicUrl;
+import com.example.douyinmusic.model.rank_list.JSONRank;
+import com.example.douyinmusic.model.rank_list.RList;
 import com.example.douyinmusic.service.MusicPlayerService;
+import com.example.douyinmusic.ui.RankListViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.Random;
@@ -49,6 +60,10 @@ public class MainActivity extends AppCompatActivity {
     private TextView textName;
     private TextView textSinger;
     private View switchModeBtn;
+    private DrawerLayout drawerLayout;
+    private LinearLayout drawerRightView;
+
+    private RankListViewModel rankListViewModel;
 
     private Playlist playlist = new Playlist();
     private AnimatedVectorDrawable playerAnimIcon;
@@ -59,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * 播放模式
      */
-    private PlayMode playMode = PlayMode.LOOP_ONE;
+    private PlayMode playMode = PlayMode.LOOP_LIST;
     private PlayState playState = PlayState.OFF;
     // 当前播放的音乐
     private int currentPlayer;
@@ -78,6 +93,8 @@ public class MainActivity extends AppCompatActivity {
         switchModeBtn = findViewById(R.id.btn_change_mode);
         //SeekBar
         seekBar = (SeekBar) findViewById(R.id.seek_bar);
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawerRightView = (LinearLayout) findViewById(R.id.drawer_right_view);
         // 音乐列表
         musicListView = (RecyclerView) findViewById(R.id.music_list);
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
@@ -91,8 +108,8 @@ public class MainActivity extends AppCompatActivity {
         switchModeBtn.setOnClickListener(new ClickSwitchModeListener());
         seekBar.setOnSeekBarChangeListener(new SeekBarDragListener());
         textName.setSelected(true);
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
     }
-
 
     private void updateProgress() {
         new Thread() {
@@ -119,11 +136,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        final boolean isPlay = false;
-
+        // 监听 fragment中的选择
+        this.rankListViewModel = new ViewModelProvider(this).get(RankListViewModel.class);
+        rankListViewModel.getCurrentRank().observe(this, new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer index) {
+                MainActivity.this.drawerLayout.closeDrawers();
+                Client.getMusicList(index, new MusicDataComplete());
+            }
+        });
         // 启动Client
         Client.start();
-        Client.getMusicList(new MusicDataComplete());
+        Client.getMusicList(26, new MusicDataComplete());
         //绑定服务
         bindService(
                 new Intent(MainActivity.this, MusicPlayerService.class),
@@ -132,6 +156,44 @@ public class MainActivity extends AppCompatActivity {
         );
         // 初始化ui
         initUi();
+
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    // 右边菜单开关事件
+    public void openRightLayout(View view) {
+        if (drawerLayout.isDrawerOpen(view)) {
+            drawerLayout.closeDrawer(view);
+        } else {
+            drawerLayout.openDrawer(view);
+        }
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        super.onOptionsItemSelected(item);
+        switch (item.getItemId()) {
+            case R.id.menu:
+                openRightLayout(drawerRightView);
+                break;
+        }
+        return true;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (drawerLayout.isDrawerOpen(drawerRightView)) {
+            drawerLayout.closeDrawers();
+        } else {
+            super.onBackPressed();
+        }
     }
 
     /**
@@ -144,7 +206,9 @@ public class MainActivity extends AppCompatActivity {
         // 更新显示
         textName.setText(currentMusic.getName());
         textSinger.setText(currentMusic.getAr().get(0).getName());
-        Glide.with(MainActivity.this).load(currentMusic.getAl().getPicurl()).into(coverImage);
+        RequestOptions options = new RequestOptions()
+                .error(R.drawable.ic_launcher_foreground);
+        Glide.with(MainActivity.this).load(currentMusic.getAl().getPicurl()).apply(options).into(coverImage);
         seekBar.setMax(currentMusic.getDt());
         binder.plays(Api.MUSIC_MP3 + currentMusic.getId());
         currentPlayer = index;
@@ -253,26 +317,37 @@ public class MainActivity extends AppCompatActivity {
      * 播放完成回调
      */
     private class MusicPlayComplete implements MediaPlayer.OnCompletionListener {
-        @Override
-        public void onCompletion(MediaPlayer mp) {
-            Log.e("提示", "播放完了");
+        private int getNext(int current) {
             int next = 0;
             switch (MainActivity.this.playMode) {
                 case LOOP_LIST:
-                    next = (currentPlayer + 1) % playlist.getTracks().size();
+                    next = (current + 1) % playlist.getTracks().size();
                     break;
                 case LOOP_ONE:
-                    next = currentPlayer;
+                    next = current;
                     break;
                 case RANDOM:
                     next = (int) (Math.random() * playlist.getTracks().size());
                     break;
             }
+            if (MainActivity.this.playlist.getTracks().get(next).getFee() == 4) { // 跳过付费歌曲
+                return getNext(next);
+            } else {
+                return next;
+            }
+        }
+
+        @Override
+        public void onCompletion(MediaPlayer mp) {
+            int next = getNext(MainActivity.this.currentPlayer);
             play(next);
             listAdapter.switchTo(next);
         }
     }
 
+    /**
+     * 绑定服务
+     */
     private class mServiceConnection implements ServiceConnection {
 
         @Override
@@ -285,6 +360,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * 拖拽进度条
+     */
     class SeekBarDragListener implements SeekBar.OnSeekBarChangeListener {
         @Override
         public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
