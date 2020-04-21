@@ -11,19 +11,16 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.Manifest;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.drawable.AnimatedVectorDrawable;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -43,13 +40,9 @@ import com.example.douyinmusic.client.TaskCompleteCallback;
 import com.example.douyinmusic.model.music_list.MusicJSON;
 import com.example.douyinmusic.model.music_list.Playlist;
 import com.example.douyinmusic.model.music_list.Tracks;
-import com.example.douyinmusic.model.rank_list.JSONRank;
-import com.example.douyinmusic.model.rank_list.RList;
 import com.example.douyinmusic.service.MusicPlayerService;
 import com.example.douyinmusic.ui.RankListViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-
-import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
