@@ -10,7 +10,14 @@ import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.lifecycle.ViewModelProvider;
+
+import com.example.douyinmusic.client.Client;
+import com.example.douyinmusic.client.TaskCompleteCallback;
+import com.example.douyinmusic.model.lyric.JSONLyric;
+
 public class MusicPlayerService extends Service {
+
     public MusicPlayerService() {
     }
 

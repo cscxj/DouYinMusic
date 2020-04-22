@@ -1,11 +1,11 @@
 package com.example.douyinmusic.client;
 
 import com.example.douyinmusic.api.Api;
+import com.example.douyinmusic.model.lyric.JSONLyric;
 import com.example.douyinmusic.model.music_list.MusicJSON;
 import com.example.douyinmusic.model.rank_list.JSONRank;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import java.io.IOException;
 
 
@@ -41,9 +41,7 @@ public class Client {
                         .build();
                 try {
                     Response response = client.newCall(request).execute();
-
                     String jsonData = response.body().string();
-                    //callback.completed(response.body().string());
                     Gson gson = new GsonBuilder()
                             .setLenient()// json宽松
                             .enableComplexMapKeySerialization()//支持Map的key为复杂对象的形式
@@ -85,6 +83,37 @@ public class Client {
                     callback.completed(rankData);
                 } catch (IOException e) {
                     callback.completed(new JSONRank());
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+    }
+
+    /**
+     * 获取歌词数据
+     */
+    public static void getLyric(final long id, final TaskCompleteCallback<JSONLyric> callback) {
+        new Thread() {
+            @Override
+            public void run() {
+                super.run();
+                Request request = new Request.Builder()
+                        .url(Api.LYRIC + id)
+                        .build();
+                try {
+                    Response response = client.newCall(request).execute();
+                    String jsonData = response.body().string();
+                    Gson gson = new GsonBuilder()
+                            .setLenient()// json宽松
+                            .enableComplexMapKeySerialization()//支持Map的key为复杂对象的形式
+                            .serializeNulls() //智能null
+                            .setPrettyPrinting()// 调教格式
+                            .disableHtmlEscaping() //默认是GSON把HTML 转义的
+                            .create();
+                    JSONLyric lyricData = gson.fromJson(jsonData, JSONLyric.class);
+                    callback.completed(lyricData);
+                } catch (IOException e) {
+                    callback.completed(new JSONLyric());
                     e.printStackTrace();
                 }
             }

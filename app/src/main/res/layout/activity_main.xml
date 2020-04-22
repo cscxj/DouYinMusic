@@ -93,10 +93,11 @@
                     android:gravity="center">
 
                     <TextView
+                        android:id="@+id/text_lyric"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-
-                        android:text="歌词加载中..." />
+                        android:ellipsize="marquee"
+                        android:marqueeRepeatLimit="marquee_forever" />
                 </LinearLayout>
             </com.google.android.material.appbar.AppBarLayout>
 
@@ -120,16 +121,16 @@
 
     <LinearLayout
         android:id="@+id/drawer_right_view"
-        android:clickable="true"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_gravity="start"
         android:background="@color/white"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:clickable="true">
+
         <fragment
-            android:name="com.example.douyinmusic.ui.RankListFragment"
             android:id="@+id/rank_list_fragment"
+            android:name="com.example.douyinmusic.ui.RankListFragment"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            />
+            android:layout_height="match_parent" />
     </LinearLayout>
 </androidx.drawerlayout.widget.DrawerLayout>

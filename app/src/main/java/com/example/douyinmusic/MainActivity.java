@@ -21,6 +21,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -36,7 +37,9 @@ import com.bumptech.glide.request.RequestOptions;
 import com.example.douyinmusic.adapters.MusicListAdapter;
 import com.example.douyinmusic.api.Api;
 import com.example.douyinmusic.client.Client;
+import com.example.douyinmusic.client.Lyric;
 import com.example.douyinmusic.client.TaskCompleteCallback;
+import com.example.douyinmusic.model.lyric.JSONLyric;
 import com.example.douyinmusic.model.music_list.MusicJSON;
 import com.example.douyinmusic.model.music_list.Playlist;
 import com.example.douyinmusic.model.music_list.Tracks;
@@ -51,10 +54,12 @@ public class MainActivity extends AppCompatActivity {
     private SeekBar seekBar;
     private ImageView coverImage;
     private TextView textName;
+    private TextView textLyric;
     private TextView textSinger;
     private View switchModeBtn;
     private DrawerLayout drawerLayout;
     private LinearLayout drawerRightView;
+
 
     private RankListViewModel rankListViewModel;
 
@@ -71,11 +76,16 @@ public class MainActivity extends AppCompatActivity {
     private PlayState playState = PlayState.OFF;
     // 当前播放的音乐
     private int currentPlayer;
+    // 当前歌词
+    private Lyric currentLyric;
 
     private Handler handler = new Handler() {
         @Override
         public void handleMessage(@NonNull Message msg) {
-            seekBar.setProgress((int) msg.obj);
+            seekBar.setProgress((int)msg.obj);
+            if (null!=currentLyric){
+                textLyric.setText(currentLyric.getCurrentLyric((int)msg.obj));
+            }
         }
     };
 
@@ -83,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
         coverImage = (ImageView) findViewById(R.id.img_cover);
         textName = (TextView) findViewById(R.id.text_main_name);
         textSinger = (TextView) findViewById(R.id.text_main_singer);
+        textLyric = (TextView) findViewById(R.id.text_lyric);
         switchModeBtn = findViewById(R.id.btn_change_mode);
         //SeekBar
         seekBar = (SeekBar) findViewById(R.id.seek_bar);
@@ -101,6 +112,7 @@ public class MainActivity extends AppCompatActivity {
         switchModeBtn.setOnClickListener(new ClickSwitchModeListener());
         seekBar.setOnSeekBarChangeListener(new SeekBarDragListener());
         textName.setSelected(true);
+        textLyric.setSelected(true);
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
     }
 
@@ -124,6 +136,8 @@ public class MainActivity extends AppCompatActivity {
         }.start();
     }
 
+
+
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
         // 启动Client
         Client.start();
         Client.getMusicList(26, new MusicDataComplete());
+
         //绑定服务
         bindService(
                 new Intent(MainActivity.this, MusicPlayerService.class),
@@ -204,8 +219,21 @@ public class MainActivity extends AppCompatActivity {
         Glide.with(MainActivity.this).load(currentMusic.getAl().getPicurl()).apply(options).into(coverImage);
         seekBar.setMax(currentMusic.getDt());
         binder.plays(Api.MUSIC_MP3 + currentMusic.getId());
+        Client.getLyric(currentMusic.getId(),new TaskCompleteCallback<JSONLyric>() {
+            @Override
+            public void completed(JSONLyric res) {
+                try {
+                    currentLyric = new Lyric(res.getLrc().getLyric());
+                }catch (NullPointerException e){
+                    Log.e("容错","获取歌词失败");
+                    currentLyric = new Lyric("");
+                }
+
+            }
+        });
         currentPlayer = index;
         playState = PlayState.PLAY;
+
     }
 
     /**
