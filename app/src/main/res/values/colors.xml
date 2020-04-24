@@ -12,4 +12,7 @@
 
     <color name="one">#ef4238</color>
     <color name="two">#ffb400</color>
+
+    <color name="error">#f76249</color>
+    <color name="errorTint">#fee4e7</color>
 </resources>

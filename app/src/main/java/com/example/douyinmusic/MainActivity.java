@@ -1,10 +1,9 @@
 package com.example.douyinmusic;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
+import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -16,12 +15,10 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.drawable.AnimatedVectorDrawable;
 import android.media.MediaPlayer;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -36,19 +33,20 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.douyinmusic.adapters.MusicListAdapter;
 import com.example.douyinmusic.api.Api;
-import com.example.douyinmusic.client.Client;
-import com.example.douyinmusic.client.Lyric;
-import com.example.douyinmusic.client.TaskCompleteCallback;
-import com.example.douyinmusic.model.lyric.JSONLyric;
-import com.example.douyinmusic.model.music_list.MusicJSON;
+import com.example.douyinmusic.client.NetworkConnectState;
 import com.example.douyinmusic.model.music_list.Playlist;
 import com.example.douyinmusic.model.music_list.Tracks;
+import com.example.douyinmusic.model.rank_list.RList;
 import com.example.douyinmusic.service.MusicPlayerService;
-import com.example.douyinmusic.ui.RankListViewModel;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-public class MainActivity extends AppCompatActivity {
+import static com.example.douyinmusic.MainActivityViewModel.PlayMode.*;
+import static com.example.douyinmusic.MainActivityViewModel.PlayState.*;
 
+public class MainActivity extends BaseActivity {
+    private final int MSG_PROGRESS_CHANGE = 0x01;
+    // view
+    private Toolbar actionBar;
     private RecyclerView musicListView;
     private FloatingActionButton playControlBtn;
     private SeekBar seekBar;
@@ -59,37 +57,18 @@ public class MainActivity extends AppCompatActivity {
     private View switchModeBtn;
     private DrawerLayout drawerLayout;
     private LinearLayout drawerRightView;
-
-
-    private RankListViewModel rankListViewModel;
-
-    private Playlist playlist = new Playlist();
+    // view model
+    private MainActivityViewModel model;
+    // drawable
     private AnimatedVectorDrawable playerAnimIcon;
     private AnimatedVectorDrawable pauseAnimIcon;
-
+    // adapter
     private MusicListAdapter listAdapter;
+    // binder
     private MusicPlayerService.mBinder binder;
-    /**
-     * 播放模式
-     */
-    private PlayMode playMode = PlayMode.LOOP_LIST;
-    private PlayState playState = PlayState.OFF;
-    // 当前播放的音乐
-    private int currentPlayer;
-    // 当前歌词
-    private Lyric currentLyric;
-
-    private Handler handler = new Handler() {
-        @Override
-        public void handleMessage(@NonNull Message msg) {
-            seekBar.setProgress((int)msg.obj);
-            if (null!=currentLyric){
-                textLyric.setText(currentLyric.getCurrentLyric((int)msg.obj));
-            }
-        }
-    };
 
     private void initUi() {
+        actionBar = (Toolbar)findViewById(R.id.action_bar);
         coverImage = (ImageView) findViewById(R.id.img_cover);
         textName = (TextView) findViewById(R.id.text_main_name);
         textSinger = (TextView) findViewById(R.id.text_main_singer);
@@ -101,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
         drawerRightView = (LinearLayout) findViewById(R.id.drawer_right_view);
         // 音乐列表
         musicListView = (RecyclerView) findViewById(R.id.music_list);
+
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         musicListView.setLayoutManager(linearLayoutManager);
         // 浮动按钮
@@ -114,65 +94,152 @@ public class MainActivity extends AppCompatActivity {
         textName.setSelected(true);
         textLyric.setSelected(true);
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
-    }
-
-    private void updateProgress() {
-        new Thread() {
+        actionBar.inflateMenu(R.menu.menu);
+        actionBar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
-            public void run() {
-                while (!interrupted()) {
-                    int progress = binder.getCurrentPosition();
-                    Message msg = new Message();
-                    msg.what = 1;
-                    msg.obj = progress;
-                    handler.sendMessage(msg);
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+            public boolean onMenuItemClick(MenuItem item) {
+                openRightLayout(drawerRightView);
+                return true;
             }
-        }.start();
+        });
     }
 
-
-
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        // 监听 fragment中的选择
-        this.rankListViewModel = new ViewModelProvider(this).get(RankListViewModel.class);
-        rankListViewModel.getCurrentRank().observe(this, new Observer<Integer>() {
+    /**
+     * 绑定数据
+     */
+    private void bindData() {
+        model.getCurrentRank().observe(this, new Observer<Integer>() {
             @Override
             public void onChanged(Integer index) {
                 MainActivity.this.drawerLayout.closeDrawers();
-                Client.getMusicList(index, new MusicDataComplete());
             }
         });
-        // 启动Client
-        Client.start();
-        Client.getMusicList(26, new MusicDataComplete());
 
+        model.getPlaylistData().observe(this, new Observer<Playlist>() {
+            @Override
+            public void onChanged(Playlist playlist) {
+                listAdapter = new MusicListAdapter(playlist);
+                listAdapter.setSlectMusicListener(new SelectMusicListener());
+                musicListView.setAdapter(listAdapter);
+            }
+        });
+
+        model.getCurrRank().observe(this, new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer integer) {
+                RList rankInfo = model.getRankData().getValue().getList().get(integer);
+                actionBar.setTitle(rankInfo.getName());
+                textName.setText(rankInfo.getName());
+                textSinger.setText(rankInfo.getUpdatefrequency());
+                RequestOptions options = new RequestOptions()
+                        .error(R.drawable.ic_launcher_foreground);
+                Glide.with(MainActivity.this).load(rankInfo.getCoverimgurl()).apply(options).into(coverImage);
+            }
+        });
+
+        model.getCurrMusic().observe(this, new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer integer) {
+                listAdapter.switchTo(integer);
+                play();
+                model.updateLyricData();
+                Tracks data = model.getPlaylistData().getValue().getTracks().get(model.getCurrMusic().getValue());
+                textName.setText(data.getName());
+                textSinger.setText(data.getAr().get(0).getName());
+                RequestOptions options = new RequestOptions()
+                        .error(R.drawable.ic_launcher_foreground);
+                Glide.with(MainActivity.this).load(data.getAl().getPicurl()).apply(options).into(coverImage);
+            }
+        });
+
+        model.getPlayProgress().observe(this, new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer integer) {
+                seekBar.setProgress(integer);
+                if (model.getLyricData().getValue() != null) { // 有歌词数据就开始更新当前歌词
+                    model.updateCurrLyric();
+                }
+            }
+        });
+
+        model.getCurrLyric().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(String s) {
+                textLyric.setText(s);
+            }
+        });
+
+        model.getPlayState().observe(this, new Observer<MainActivityViewModel.PlayState>() {
+            @Override
+            public void onChanged(MainActivityViewModel.PlayState playState) {
+                switch (playState) {
+                    case PAUSE:
+                        binder.pauses();
+                        playControlBtn.setImageDrawable(pauseAnimIcon);
+                        pauseAnimIcon.start();
+                        break;
+                    case PLAY:
+                        binder.pauses();
+                        playControlBtn.setImageDrawable(playerAnimIcon);
+                        playerAnimIcon.start();
+                        break;
+                }
+            }
+        });
+
+        model.getPlayMode().observe(this, new Observer<MainActivityViewModel.PlayMode>() {
+            @Override
+            public void onChanged(MainActivityViewModel.PlayMode playMode) {
+                switch (playMode) {
+                    case RANDOM:
+                        switchModeBtn.setBackgroundResource(R.drawable.ic_shuffle_white_24dp);
+                        Toast.makeText(MainActivity.this, "随机播放", Toast.LENGTH_SHORT).show();
+                        break;
+                    case LOOP_ONE:
+                        switchModeBtn.setBackgroundResource(R.drawable.ic_repeat_one_black_24dp);
+                        Toast.makeText(MainActivity.this, "单曲循环", Toast.LENGTH_SHORT).show();
+                        break;
+                    case LOOP_LIST:
+                        switchModeBtn.setBackgroundResource(R.drawable.ic_repeat_black_24dp);
+                        Toast.makeText(MainActivity.this, "列表循环", Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onCreate(final Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        this.model = new ViewModelProvider(this).get(MainActivityViewModel.class);
         //绑定服务
         bindService(
                 new Intent(MainActivity.this, MusicPlayerService.class),
                 new mServiceConnection(),
                 BIND_AUTO_CREATE
         );
+        //binder.setCompletionListener(new MusicPlayComplete());
         // 初始化ui
         initUi();
+        bindData();
+        listenerProgress();
+
 
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
-        MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.menu.menu, menu);
-        return true;
+    private void listenerProgress() {
+        new Thread() {
+            @Override
+            public void run() {
+                while (!isInterrupted()) {
+                    if (model.getPlayState().getValue() == PLAY) {
+                        model.getPlayProgress().postValue(binder.getCurrentPosition()); //postValue() 在主线程执行
+                    }
+                }
+            }
+        }.start();
     }
 
     // 右边菜单开关事件
@@ -184,17 +251,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        super.onOptionsItemSelected(item);
-        switch (item.getItemId()) {
-            case R.id.menu:
-                openRightLayout(drawerRightView);
-                break;
-        }
-        return true;
-    }
-
+    /**
+     * 返回键回调
+     */
     @Override
     public void onBackPressed() {
         if (drawerLayout.isDrawerOpen(drawerRightView)) {
@@ -204,36 +263,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * 线程消息站
-     */
-
-    void play(int index) {
+    void play() {
         // 获取数据
-        Tracks currentMusic = playlist.getTracks().get(index);
-        // 更新显示
-        textName.setText(currentMusic.getName());
-        textSinger.setText(currentMusic.getAr().get(0).getName());
-        RequestOptions options = new RequestOptions()
-                .error(R.drawable.ic_launcher_foreground);
-        Glide.with(MainActivity.this).load(currentMusic.getAl().getPicurl()).apply(options).into(coverImage);
+        final Tracks currentMusic = model.getPlaylistData().getValue().getTracks().get(model.getCurrMusic().getValue());
         seekBar.setMax(currentMusic.getDt());
         binder.plays(Api.MUSIC_MP3 + currentMusic.getId());
-        Client.getLyric(currentMusic.getId(),new TaskCompleteCallback<JSONLyric>() {
-            @Override
-            public void completed(JSONLyric res) {
-                try {
-                    currentLyric = new Lyric(res.getLrc().getLyric());
-                }catch (NullPointerException e){
-                    Log.e("容错","获取歌词失败");
-                    currentLyric = new Lyric("");
-                }
-
-            }
-        });
-        currentPlayer = index;
-        playState = PlayState.PLAY;
-
+        model.getPlayState().setValue(PLAY);
     }
 
     /**
@@ -242,30 +277,13 @@ public class MainActivity extends AppCompatActivity {
     private class SelectMusicListener implements MusicListAdapter.OnSelect {
         @Override
         public void select(final int index) {
-            play(index);
-            binder.setCompletionListener(new MusicPlayComplete());
-            updateProgress();
-            setState(PlayState.PLAY);
-        }
-    }
+            // 暂时先这样写吧
+            if (((MyApplication) getApplication()).getNetworkConnectState().getValue() == NetworkConnectState.NONE) {
+                Toast.makeText(app, "网络错误", Toast.LENGTH_SHORT).show();
+            } else {
+                model.getCurrMusic().setValue(index);
+            }
 
-    private void setState(PlayState state) {
-        switch (state) {
-            case PAUSE:
-                playControlBtn.setImageDrawable(pauseAnimIcon);
-                pauseAnimIcon.start();
-                binder.pauses();
-                playState = PlayState.PAUSE;
-                break;
-            case PLAY:
-                playControlBtn.setImageDrawable(playerAnimIcon);
-                playerAnimIcon.start();
-                binder.pauses();
-                playState = PlayState.PLAY;
-                break;
-            case OFF:
-                playState = PlayState.PLAY;
-                break;
         }
     }
 
@@ -275,17 +293,17 @@ public class MainActivity extends AppCompatActivity {
     private class ClickFloatBtn implements View.OnClickListener {
         @Override
         public void onClick(View v) {
-            switch (playState) {
+            switch (model.getPlayState().getValue()) {
                 case OFF:
+                    Toast.makeText(MainActivity.this, "请选择音乐", Toast.LENGTH_SHORT).show();
                     break;
                 case PLAY:
-                    setState(PlayState.PAUSE);
+                    model.getPlayState().setValue(PAUSE);
                     break;
                 case PAUSE:
-                    setState(PlayState.PLAY);
+                    model.getPlayState().setValue(PLAY);
                     break;
             }
-
         }
     }
 
@@ -293,44 +311,19 @@ public class MainActivity extends AppCompatActivity {
      * 切换模式事件
      */
     private class ClickSwitchModeListener implements View.OnClickListener {
-
         @Override
         public void onClick(View v) {
-            switch (playMode) {
+            switch (model.getPlayMode().getValue()) {
                 case LOOP_ONE:
-                    playMode = PlayMode.LOOP_LIST;
-                    switchModeBtn.setBackgroundResource(R.drawable.ic_repeat_black_24dp);
-                    Toast.makeText(MainActivity.this, "列表循环播放", Toast.LENGTH_SHORT).show();
+                    model.getPlayMode().setValue(LOOP_LIST);
                     break;
                 case LOOP_LIST:
-                    playMode = PlayMode.RANDOM;
-                    switchModeBtn.setBackgroundResource(R.drawable.ic_shuffle_white_24dp);
-                    Toast.makeText(MainActivity.this, "列表随机播放", Toast.LENGTH_SHORT).show();
+                    model.getPlayMode().setValue(RANDOM);
                     break;
                 case RANDOM:
-                    playMode = PlayMode.LOOP_ONE;
-                    switchModeBtn.setBackgroundResource(R.drawable.ic_repeat_one_black_24dp);
-                    Toast.makeText(MainActivity.this, "单曲循环播放", Toast.LENGTH_SHORT).show();
+                    model.getPlayMode().setValue(LOOP_ONE);
                     break;
             }
-        }
-    }
-
-    /**
-     * 获取音乐数据完成
-     */
-    private class MusicDataComplete implements TaskCompleteCallback<MusicJSON> {
-        @Override
-        public void completed(final MusicJSON res) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() { // 渲染
-                    playlist = res.getPlaylist();
-                    listAdapter = new MusicListAdapter(res.getPlaylist());
-                    listAdapter.setSlectMusicListener(new SelectMusicListener());
-                    musicListView.setAdapter(listAdapter);
-                }
-            });
         }
     }
 
@@ -340,18 +333,18 @@ public class MainActivity extends AppCompatActivity {
     private class MusicPlayComplete implements MediaPlayer.OnCompletionListener {
         private int getNext(int current) {
             int next = 0;
-            switch (MainActivity.this.playMode) {
+            switch (model.getPlayMode().getValue()) {
                 case LOOP_LIST:
-                    next = (current + 1) % playlist.getTracks().size();
+                    next = (current + 1) % model.getPlaylistData().getValue().getTracks().size();
                     break;
                 case LOOP_ONE:
                     next = current;
                     break;
                 case RANDOM:
-                    next = (int) (Math.random() * playlist.getTracks().size());
+                    next = (int) (Math.random() * model.getPlaylistData().getValue().getTracks().size());
                     break;
             }
-            if (MainActivity.this.playlist.getTracks().get(next).getFee() == 4) { // 跳过付费歌曲
+            if (MainActivity.this.model.getPlaylistData().getValue().getTracks().get(next).getFee() == 4) { // 跳过付费歌曲
                 return getNext(next);
             } else {
                 return next;
@@ -360,9 +353,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onCompletion(MediaPlayer mp) {
-            int next = getNext(MainActivity.this.currentPlayer);
-            play(next);
-            listAdapter.switchTo(next);
+            int next = getNext(model.getCurrMusic().getValue());
+            model.getCurrMusic().setValue(next);
         }
     }
 
@@ -370,10 +362,10 @@ public class MainActivity extends AppCompatActivity {
      * 绑定服务
      */
     private class mServiceConnection implements ServiceConnection {
-
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             MainActivity.this.binder = (MusicPlayerService.mBinder) service;
+            binder.setCompletionListener(new MusicPlayComplete());
         }
 
         @Override
@@ -399,15 +391,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    enum PlayMode {
-        LOOP_ONE,
-        LOOP_LIST,
-        RANDOM,
+    @Override
+    void onNetworkClose() {
+        findViewById(R.id.error_view).setVisibility(View.VISIBLE);
     }
 
-    enum PlayState {
-        OFF,
-        PLAY,
-        PAUSE
+    @Override
+    void onNetworkConnect() {
+        findViewById(R.id.error_view).setVisibility(View.GONE);
+        model.init();
     }
 }

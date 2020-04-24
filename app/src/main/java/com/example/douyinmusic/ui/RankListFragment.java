@@ -2,7 +2,6 @@ package com.example.douyinmusic.ui;
 
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.lifecycle.ViewModelProviders;
 
 import android.os.Bundle;
 
@@ -14,21 +13,17 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 
+import com.example.douyinmusic.MainActivityViewModel;
 import com.example.douyinmusic.R;
 import com.example.douyinmusic.adapters.RankListAdapter;
 import com.example.douyinmusic.model.rank_list.JSONRank;
-import com.example.douyinmusic.model.rank_list.RList;
-
-import java.util.List;
 
 public class RankListFragment extends Fragment {
-    private RankListViewModel viewModel;
+    private MainActivityViewModel model;
     private RankListAdapter adapter;
     private RecyclerView recyclerView;
 
@@ -37,9 +32,7 @@ public class RankListFragment extends Fragment {
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
             if (msg.what == 0x1111) {
-                JSONRank data = (JSONRank) msg.obj;
-                adapter = new RankListAdapter(data.getList());
-                recyclerView.setAdapter(adapter);
+                model.getRankData().setValue((JSONRank)msg.obj);
             }
         }
     };
@@ -51,9 +44,8 @@ public class RankListFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        viewModel =new ViewModelProvider(getActivity()).get(RankListViewModel.class);
-        viewModel.init();
-        viewModel.getRankData().observe(this, new Observer<JSONRank>() {
+        model =new ViewModelProvider(getActivity()).get(MainActivityViewModel.class);
+        model.getRankData().observe(this, new Observer<JSONRank>() {
             @Override
             public void onChanged(JSONRank jsonRank) {
                 // 数据更新了
@@ -82,13 +74,14 @@ public class RankListFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        // TODO: Use the ViewModel
+
     }
 
     class SelectRankListener implements RankListAdapter.ClickItemListener{
         @Override
         public void click(int index) {
-            RankListFragment.this.viewModel.setCurrentRank(index);
+            RankListFragment.this.model.setCurrentRank(index);
+            model.updateMusicListData();
         }
     }
 

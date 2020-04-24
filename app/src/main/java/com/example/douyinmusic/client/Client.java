@@ -1,5 +1,7 @@
 package com.example.douyinmusic.client;
 
+import android.util.Log;
+
 import com.example.douyinmusic.api.Api;
 import com.example.douyinmusic.model.lyric.JSONLyric;
 import com.example.douyinmusic.model.music_list.MusicJSON;
@@ -7,6 +9,7 @@ import com.example.douyinmusic.model.rank_list.JSONRank;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.IOException;
+import java.net.ConnectException;
 
 
 import okhttp3.OkHttpClient;
@@ -31,7 +34,7 @@ public class Client {
     /*
      *  获取音乐列表的数据，直接返回JSON映射对象。
      * */
-    public static void getMusicList(final long rankId,final TaskCompleteCallback<MusicJSON> callback) {
+    public static void getMusicList(final String rankId,final TaskCompleteCallback<MusicJSON> callback) {
         new Thread() {
             @Override
             public void run() {
@@ -51,6 +54,9 @@ public class Client {
                             .create();
                     MusicJSON musicJSON = gson.fromJson(jsonData, MusicJSON.class);
                     callback.completed(musicJSON);
+
+                } catch (ConnectException e1){
+                    Log.e(this.toString(),"网络连接异常");
                 } catch (IOException e) {
                     callback.completed(new MusicJSON());
                     e.printStackTrace();
@@ -69,7 +75,6 @@ public class Client {
                         .build();
                 try {
                     Response response = client.newCall(request).execute();
-
                     String jsonData = response.body().string();
                     //callback.completed(response.body().string());
                     Gson gson = new GsonBuilder()
@@ -81,6 +86,8 @@ public class Client {
                             .create();
                     JSONRank rankData = gson.fromJson(jsonData, JSONRank.class);
                     callback.completed(rankData);
+                } catch (ConnectException e1){ // 网络连接异常
+                    Log.e(this.toString(),"网络连接异常");
                 } catch (IOException e) {
                     callback.completed(new JSONRank());
                     e.printStackTrace();

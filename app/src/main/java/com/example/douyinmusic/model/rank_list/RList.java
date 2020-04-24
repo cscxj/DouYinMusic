@@ -20,7 +20,7 @@ public class RList {
     private String artists;
     private String tracks;
     @JsonProperty("updateFrequency")
-    private String updatefrequency;
+    private String updateFrequency;
     @JsonProperty("backgroundCoverId")
     private int backgroundcoverid;
     @JsonProperty("backgroundCoverUrl")
@@ -76,7 +76,7 @@ public class RList {
     @JsonProperty("totalDuration")
     private int totalduration;
     private String name;
-    private long id;
+    private String id;
     @JsonProperty("coverImgId_str")
     private String coverimgidStr;
     @JsonProperty("ToplistType")
@@ -117,10 +117,10 @@ public class RList {
      }
 
     public void setUpdatefrequency(String updatefrequency) {
-         this.updatefrequency = updatefrequency;
+         this.updateFrequency = updatefrequency;
      }
      public String getUpdatefrequency() {
-         return updatefrequency;
+         return updateFrequency;
      }
 
     public void setBackgroundcoverid(int backgroundcoverid) {
@@ -340,10 +340,10 @@ public class RList {
          return name;
      }
 
-    public void setId(long id) {
+    public void setId(String id) {
          this.id = id;
      }
-     public long getId() {
+     public String getId() {
          return id;
      }
 

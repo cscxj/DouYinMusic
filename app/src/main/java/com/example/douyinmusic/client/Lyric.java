@@ -14,9 +14,6 @@ public class Lyric {
 
     private final static String REG = "\\[(\\d{2}):(\\d{2})\\.(\\d{1,3})\\](.*?(?=\\s\\[))";
     private List<LyricLine> lyricLines;
-    private long progress;
-    private int currentLyric;
-    private Observer observer;
 
     /**
      * @param lrc 歌词 lrc字符串
@@ -43,9 +40,9 @@ public class Lyric {
         }
     }
 
-    public Lyric(String errInfo,int flag){
-
-    }
+//    public Lyric(String errInfo,int flag){
+//
+//    }
 
     /**
      * 根据进度获取当前歌词
@@ -53,7 +50,7 @@ public class Lyric {
      * @return
      */
     public String getCurrentLyric(long progress) {
-        if (lyricLines.size() == 0)return "无歌词数据";
+        if (lyricLines.size() == 0)return "纯音乐 没歌词";
         for (int i = 0; i < lyricLines.size() - 1; i++) {
             if (progress >= lyricLines.get(i).startTime && progress < lyricLines.get(i + 1).startTime) {
                 return lyricLines.get(i).text;
@@ -67,9 +64,6 @@ public class Lyric {
     public static class LyricLine {
         public long startTime;
         public String text;
-
-        LyricLine() {
-        }
 
         LyricLine(long startTime, String text) {
             this.startTime = startTime;

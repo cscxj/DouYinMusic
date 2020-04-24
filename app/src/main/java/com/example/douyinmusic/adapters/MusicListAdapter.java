@@ -28,7 +28,6 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.Musi
     };
     // 当前播放的音乐
     private int actionItem = -1;
-    private MusicItemViewHolder itemViewHolder;
 
     public MusicListAdapter(Playlist musicData) {
         this.data = musicData;
@@ -86,7 +85,6 @@ public class MusicListAdapter extends RecyclerView.Adapter<MusicListAdapter.Musi
         if (data.getTracks().get(position).getFee() != 4) { // fee为4是付费歌曲
             holder.itemView.setOnClickListener(new ClickItemListener());
         } else {
-            //holder.itemView.setOnClickListener(new ClickItemListener());
             holder.itemView.setBackgroundColor(0x11000000);
         }
         // 设置排名颜色

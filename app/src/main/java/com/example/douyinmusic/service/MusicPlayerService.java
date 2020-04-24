@@ -96,7 +96,7 @@ public class MusicPlayerService extends Service {
                 if (mediaPlayer.isPlaying()) {
                     return mediaPlayer.getCurrentPosition();
                 } else if (!mediaPlayer.isPlaying()) {
-                    return mediaPlayer.getCurrentPosition();
+                    return 0;
                 }
             }
         } catch (Exception e) {
