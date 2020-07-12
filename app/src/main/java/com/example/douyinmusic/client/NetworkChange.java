@@ -4,15 +4,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
-import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.os.Build;
-import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
-import java.util.ArrayList;
-import java.util.List;
 
 public class NetworkChange extends BroadcastReceiver {
 
@@ -65,7 +61,6 @@ public class NetworkChange extends BroadcastReceiver {
         }
         return NetworkConnectState.NONE;
     }
-
 }
 
 

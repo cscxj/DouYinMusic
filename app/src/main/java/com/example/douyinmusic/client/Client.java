@@ -76,7 +76,6 @@ public class Client {
                 try {
                     Response response = client.newCall(request).execute();
                     String jsonData = response.body().string();
-                    //callback.completed(response.body().string());
                     Gson gson = new GsonBuilder()
                             .setLenient()// json宽松
                             .enableComplexMapKeySerialization()//支持Map的key为复杂对象的形式
@@ -89,8 +88,8 @@ public class Client {
                 } catch (ConnectException e1){ // 网络连接异常
                     Log.e(this.toString(),"网络连接异常");
                 } catch (IOException e) {
+                    Log.e("okhttp io exception",e.toString());
                     callback.completed(new JSONRank());
-                    e.printStackTrace();
                 }
             }
         }.start();

@@ -1,7 +1,5 @@
 package com.example.douyinmusic;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.appcompat.widget.Toolbar;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -14,13 +12,11 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.drawable.AnimatedVectorDrawable;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
@@ -44,7 +40,6 @@ import static com.example.douyinmusic.MainActivityViewModel.PlayMode.*;
 import static com.example.douyinmusic.MainActivityViewModel.PlayState.*;
 
 public class MainActivity extends BaseActivity {
-    private final int MSG_PROGRESS_CHANGE = 0x01;
     // view
     private Toolbar actionBar;
     private RecyclerView musicListView;
@@ -62,13 +57,15 @@ public class MainActivity extends BaseActivity {
     // drawable
     private AnimatedVectorDrawable playerAnimIcon;
     private AnimatedVectorDrawable pauseAnimIcon;
+    private Drawable playerIcon;
+    private Drawable pauseIcon;
     // adapter
     private MusicListAdapter listAdapter;
     // binder
     private MusicPlayerService.mBinder binder;
 
     private void initUi() {
-        actionBar = (Toolbar)findViewById(R.id.action_bar);
+        actionBar = (Toolbar) findViewById(R.id.action_bar);
         coverImage = (ImageView) findViewById(R.id.img_cover);
         textName = (TextView) findViewById(R.id.text_main_name);
         textSinger = (TextView) findViewById(R.id.text_main_singer);
@@ -84,10 +81,16 @@ public class MainActivity extends BaseActivity {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
         musicListView.setLayoutManager(linearLayoutManager);
         // 浮动按钮
-        playerAnimIcon = (AnimatedVectorDrawable) AppCompatResources.getDrawable(this, R.drawable.ic_play_animatable);
-        pauseAnimIcon = (AnimatedVectorDrawable) AppCompatResources.getDrawable(this, R.drawable.ic_pause_animatable);
         playControlBtn = (FloatingActionButton) findViewById(R.id.btn_player_control);
-        playControlBtn.setImageDrawable(playerAnimIcon);
+        if (Build.VERSION.SDK_INT >= 25) {
+            playerAnimIcon = (AnimatedVectorDrawable) AppCompatResources.getDrawable(this, R.drawable.ic_play_animatable);
+            pauseAnimIcon = (AnimatedVectorDrawable) AppCompatResources.getDrawable(this, R.drawable.ic_pause_animatable);
+            playControlBtn.setImageDrawable(playerAnimIcon);
+        }else {
+            playerIcon = AppCompatResources.getDrawable(this,R.drawable.ic_pause_black_24dp);
+            pauseIcon = AppCompatResources.getDrawable(this,R.drawable.ic_play_arrow_black_24dp);
+            playControlBtn.setImageDrawable(pauseIcon);
+        }
         playControlBtn.setOnClickListener(new ClickFloatBtn());
         switchModeBtn.setOnClickListener(new ClickSwitchModeListener());
         seekBar.setOnSeekBarChangeListener(new SeekBarDragListener());
@@ -175,13 +178,21 @@ public class MainActivity extends BaseActivity {
                 switch (playState) {
                     case PAUSE:
                         binder.pauses();
-                        playControlBtn.setImageDrawable(pauseAnimIcon);
-                        pauseAnimIcon.start();
+                        if (Build.VERSION.SDK_INT >= 25) {
+                            playControlBtn.setImageDrawable(pauseAnimIcon);
+                            pauseAnimIcon.start();
+                        }else {
+                            playControlBtn.setImageDrawable(pauseIcon);
+                        }
                         break;
                     case PLAY:
                         binder.pauses();
-                        playControlBtn.setImageDrawable(playerAnimIcon);
-                        playerAnimIcon.start();
+                        if (Build.VERSION.SDK_INT >= 25) {
+                            playControlBtn.setImageDrawable(playerAnimIcon);
+                            playerAnimIcon.start();
+                        } else {
+                            playControlBtn.setImageDrawable(playerIcon);
+                        }
                         break;
                 }
             }

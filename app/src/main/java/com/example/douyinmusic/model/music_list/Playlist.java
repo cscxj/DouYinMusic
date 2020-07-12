@@ -4,6 +4,7 @@
 package com.example.douyinmusic.model.music_list;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.ArrayList;
 import java.util.List;
 /**
  * Auto-generated: 2020-04-17 23:38:8
@@ -13,10 +14,10 @@ import java.util.List;
  */
 public class Playlist {
 
-    private List<String> subscribers;
+    //private List<String> subscribers;
     private boolean subscribed;
     private Creator creator;
-    private List<Tracks> tracks;
+    private List<Tracks> tracks = new ArrayList<>();
     @JsonProperty("trackIds")
     private List<Trackids> trackids;
     @JsonProperty("updateFrequency")
@@ -78,12 +79,12 @@ public class Playlist {
     private String coverimgidStr;
     @JsonProperty("commentCount")
     private int commentcount;
-    public void setSubscribers(List<String> subscribers) {
-         this.subscribers = subscribers;
-     }
-     public List<String> getSubscribers() {
-         return subscribers;
-     }
+    //public void setSubscribers(List<String> subscribers) {
+    //     this.subscribers = subscribers;
+    // }
+    // public List<String> getSubscribers() {
+    //     return subscribers;
+    // }
 
     public void setSubscribed(boolean subscribed) {
          this.subscribed = subscribed;

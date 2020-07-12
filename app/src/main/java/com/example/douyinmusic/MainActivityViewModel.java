@@ -2,13 +2,12 @@ package com.example.douyinmusic;
 
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.example.douyinmusic.client.ApiTransition;
 import com.example.douyinmusic.client.Client;
 import com.example.douyinmusic.client.Lyric;
 import com.example.douyinmusic.client.TaskCompleteCallback;
@@ -62,7 +61,7 @@ public class MainActivityViewModel extends ViewModel {
         Client.start();
         Client.getRankList(new RankDataComplete());
         Client.getMusicList(
-                "3",
+                "19723756",
                 new ListDataComplete()
         );
     }
@@ -83,7 +82,7 @@ public class MainActivityViewModel extends ViewModel {
      * 更新音乐列表数据
      */
     public void updateMusicListData() {
-        String id = ApiTransition.transition(this.rankData.getValue().getList().get(this.getCurrRank().getValue()).getId());
+        String id = this.rankData.getValue().getList().get(this.getCurrRank().getValue()).getId();
         Client.getMusicList(id, new ListDataComplete());
     }
 
